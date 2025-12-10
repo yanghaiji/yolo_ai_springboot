@@ -1,2 +1,7 @@
-# Project exclude paths
+# project exclude paths
 /target/
+/logs/
+/.mvn/
+/.idea/
+/.vscode/
+*.log
