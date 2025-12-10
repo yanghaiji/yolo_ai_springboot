@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片检测 - YOLOv11</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YOLOv11 图片检测</h1>
+            <nav>
+                <a href="/">首页</a>
+                <span>></span>
+                <a href="/image-detection">图片检测</a>
+            </nav>
+        </header>
+        
+        <main>
+            <div class="detection-section">
+                <div class="upload-area">
+                    <h2>上传图片</h2>
+                    <div class="file-upload">
+                        <input type="file" id="imageFile" accept="image/*">
+                        <label for="imageFile" id="fileLabel">点击选择图片或拖拽到此处</label>
+                    </div>
+                    <button id="detectBtn" onclick="detectImage()" disabled>开始检测</button>
+                </div>
+                
+                <div class="result-area">
+                    <div class="image-container">
+                        <div class="image-box">
+                            <h3>原始图片</h3>
+                            <div id="originalImage" class="image-display"></div>
+                        </div>
+                        <div class="image-box">
+                            <h3>检测结果</h3>
+                            <div id="resultImage" class="image-display">
+                                <p class="placeholder">检测结果将显示在这里</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 YOLOv11 目标检测系统</p>
+        </footer>
+    </div>
+    
+    <script src="/static/js/image-detection.js"></script>
+</body>
+</html>

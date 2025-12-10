@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>模型管理 - YOLOv11</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YOLOv11 模型管理</h1>
+            <nav>
+                <a href="/">首页</a>
+                <span>></span>
+                <a href="/model-management">模型管理</a>
+            </nav>
+        </header>
+        
+        <main>
+            <div class="model-management">
+                <div class="upload-section">
+                    <h2>上传自定义模型</h2>
+                    <div class="upload-form">
+                        <div class="form-group">
+                            <label for="modelFile">ONNX模型文件 (.onnx)</label>
+                            <input type="file" id="modelFile" accept=".onnx" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="classesFile">类别名称文件 (.names)</label>
+                            <input type="file" id="classesFile" accept=".names" required>
+                        </div>
+                        
+                        <div class="button-group">
+                            <button id="uploadBtn" onclick="uploadModel()">上传模型</button>
+                            <button id="resetBtn" onclick="resetModel()">恢复默认模型</button>
+                        </div>
+                        
+                        <div id="resultMessage" class="result-message"></div>
+                    </div>
+                </div>
+                
+                <div class="instructions-section">
+                    <h2>自定义模型指南</h2>
+                    <div class="instructions">
+                        <h3>如何训练自己的YOLOv11模型</h3>
+                        <ol>
+                            <li>准备数据集，按照YOLO格式标注</li>
+                            <li>使用Ultralytics YOLO训练自定义模型：<br>
+                                <code>yolo train data=your_data.yaml model=yolov11n.yaml epochs=100</code>
+                            </li>
+                            <li>导出为ONNX格式：<br>
+                                <code>yolo export model=best.pt format=onnx</code>
+                            </li>
+                            <li>创建类别名称文件（.names），每行一个类别名称</li>
+                            <li>上传ONNX模型和类别文件到本页面</li>
+                        </ol>
+                        
+                        <h3>注意事项</h3>
+                        <ul>
+                            <li>模型输入尺寸默认为640x640，可以在application.properties中修改</li>
+                            <li>上传后需要重启应用以加载新模型</li>
+                            <li>建议使用与默认模型相同的输入格式和输出格式</li>
+                            <li>支持的ONNX Runtime版本：1.16.3</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 YOLOv11 目标检测系统</p>
+        </footer>
+    </div>
+    
+    <script>
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 添加返回首页按钮到导航
+            const nav = document.querySelector('nav');
+            nav.innerHTML += '<span>></span><a href="/">返回首页</a>';
+        });
+        
+        // 上传模型
+        function uploadModel() {
+            const modelFile = document.getElementById('modelFile').files[0];
+            const classesFile = document.getElementById('classesFile').files[0];
+            const uploadBtn = document.getElementById('uploadBtn');
+            const resultMessage = document.getElementById('resultMessage');
+            
+            // 验证文件
+            if (!modelFile || !classesFile) {
+                showMessage('请选择模型文件和类别文件', 'error');
+                return;
+            }
+            
+            if (!modelFile.name.endsWith('.onnx')) {
+                showMessage('模型文件必须是.onnx格式', 'error');
+                return;
+            }
+            
+            if (!classesFile.name.endsWith('.names')) {
+                showMessage('类别文件必须是.names格式', 'error');
+                return;
+            }
+            
+            // 更新UI状态
+            uploadBtn.innerHTML = '上传中... <div class="loading"></div>';
+            uploadBtn.disabled = true;
+            
+            // 创建FormData对象
+            const formData = new FormData();
+            formData.append('modelFile', modelFile);
+            formData.append('classesFile', classesFile);
+            
+            // 发送上传请求
+            fetch('/upload-model', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                showMessage(data, 'success');
+            })
+            .catch(error => {
+                showMessage('上传失败: ' + error.message, 'error');
+            })
+            .finally(() => {
+                // 恢复按钮状态
+                uploadBtn.innerHTML = '上传模型';
+                uploadBtn.disabled = false;
+            });
+        }
+        
+        // 重置模型
+        function resetModel() {
+            if (confirm('确定要恢复默认模型吗？')) {
+                const resetBtn = document.getElementById('resetBtn');
+                
+                // 更新UI状态
+                resetBtn.innerHTML = '重置中... <div class="loading"></div>';
+                resetBtn.disabled = true;
+                
+                // 发送重置请求
+                fetch('/reset-model', {
+                    method: 'POST'
+                })
+                .then(response => response.text())
+                .then(data => {
+                    showMessage(data, 'success');
+                })
+                .catch(error => {
+                    showMessage('重置失败: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    // 恢复按钮状态
+                    resetBtn.innerHTML = '恢复默认模型';
+                    resetBtn.disabled = false;
+                });
+            }
+        }
+        
+        // 显示消息
+        function showMessage(message, type) {
+            const resultMessage = document.getElementById('resultMessage');
+            resultMessage.textContent = message;
+            resultMessage.className = `result-message ${type}`;
+            
+            // 2秒后清除消息
+            setTimeout(() => {
+                resultMessage.textContent = '';
+                resultMessage.className = 'result-message';
+            }, 5000);
+        }
+    </script>
+    
+    <style>
+        .model-management {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+        
+        .upload-section, .instructions-section {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .upload-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .form-group input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+        
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .result-message {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .result-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .result-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .instructions {
+            line-height: 1.8;
+        }
+        
+        .instructions h3 {
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .instructions ol, .instructions ul {
+            margin-left: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .instructions code {
+            background-color: #e9ecef;
+            padding: 3px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            display: inline-block;
+            margin: 5px 0;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频检测 - YOLOv11</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>YOLOv11 视频检测</h1>
+            <nav>
+                <a href="/">首页</a>
+                <span>></span>
+                <a href="/video-detection">视频检测</a>
+            </nav>
+        </header>
+        
+        <main>
+            <div class="detection-section">
+                <div class="video-controls">
+                    <h2>视频源设置</h2>
+                    <div class="source-options">
+                        <div class="radio-group">
+                            <input type="radio" id="webcam" name="source" value="0" checked>
+                            <label for="webcam">摄像头</label>
+                        </div>
+                        <div class="radio-group">
+                            <input type="radio" id="video-file" name="source" value="file">
+                            <label for="video-file">视频文件</label>
+                        </div>
+                    </div>
+                    <div id="file-input-container" style="display: none;">
+                        <input type="file" id="videoFile" accept="video/*">
+                    </div>
+                    <div class="button-group">
+                        <button id="startBtn" onclick="startStream()">开始检测</button>
+                        <button id="stopBtn" onclick="stopStream()" disabled>停止检测</button>
+                    </div>
+                </div>
+                
+                <div class="result-area">
+                    <div class="video-container">
+                        <h3>检测结果</h3>
+                        <div id="videoDisplay" class="video-display">
+                            <p class="placeholder">点击开始检测按钮开始视频流</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 YOLOv11 目标检测系统</p>
+        </footer>
+    </div>
+    
+    <!-- 移除了 Stomp.js 和 SockJS 依赖，因为不再使用 WebSocket -->
+    <script src="/static/js/video-detection.js"></script>
+</body>
+</html>
