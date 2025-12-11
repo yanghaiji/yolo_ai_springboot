@@ -30,7 +30,7 @@ public class YoloConfig {
     /**
      * 置信度阈值
      */
-    private float confidenceThreshold = 0.1f;
+    private float confidenceThreshold = 0.8f;
     /**
      * NMS阈值
      */
@@ -47,5 +47,10 @@ public class YoloConfig {
      * 保存路径
      */
     private String savePath = "detection_results/";
+
+    /**
+     * 线框粗细比例
+     */
+    private int lineThicknessRatio = 800;
 
 }

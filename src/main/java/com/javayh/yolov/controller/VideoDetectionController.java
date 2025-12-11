@@ -28,11 +28,16 @@ public class VideoDetectionController {
     @ResponseBody
     public String processVideoFrame(@RequestParam("frame") String base64Image) {
         try {
+            // 移除可能的Base64前缀
+            if (base64Image.startsWith("data:image/")) {
+                base64Image = base64Image.split(",")[1];
+            }
+            
             byte[] imageBytes = Base64.getDecoder().decode(base64Image);
 
             byte[] resultImage = detectionService.detect(imageBytes);
             return Base64.getEncoder().encodeToString(resultImage);
-        } catch (IOException | ai.onnxruntime.OrtException e) {
+        } catch (Exception e) {
            log.error("Error processing video frame", e);
             return "error";
         }

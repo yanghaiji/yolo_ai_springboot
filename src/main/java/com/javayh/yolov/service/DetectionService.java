@@ -62,7 +62,7 @@ public class DetectionService {
         Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2RGB);
 
         int minDwDh = Math.min(img.width(), img.height());
-        int thickness = Math.max(1, minDwDh / ODConfig.lineThicknessRatio);
+        int thickness = Math.max(1, minDwDh / yoloConfig.getLineThicknessRatio());
 
         // 2. Letterbox 预处理（默认 640x640）
         Letterbox letterbox = new Letterbox();
@@ -129,14 +129,15 @@ public class DetectionService {
                     if (det.length < 4 + numClasses) {
                         continue;
                     }
-
+                    // 解析边界框的中心点 (x, y) 和宽高 (w, h)
                     float x = det[0], y = det[1], w = det[2], h = det[3];
+                    // 将 (x, y, w, h) 转换为左上角 (x0, y0) 和右下角 (x1, y1)
                     float x0 = x - w * 0.5f;
                     float y0 = y - h * 0.5f;
                     float x1 = x + w * 0.5f;
                     float y1 = y + h * 0.5f;
 
-                    // 找最大类别
+                    // 在类别置信度部分 [det[4] 到 det[4 + numClasses - 1]] 中找出最大值及其类别 ID
                     float maxConf = 0;
                     int clsId = -1;
                     for (int c = 0; c < numClasses; c++) {
@@ -146,7 +147,7 @@ public class DetectionService {
                         }
                     }
 
-                    if (clsId == -1 || maxConf < 0.25f) {
+                    if (clsId == -1 || maxConf < yoloConfig.getConfidenceThreshold()) {
                         continue;
                     }
 

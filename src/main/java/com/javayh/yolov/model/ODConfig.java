@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class ODConfig {
 
-    public static final int lineThicknessRatio = 200;
 
     @Autowired
     private YoloService yoloService;

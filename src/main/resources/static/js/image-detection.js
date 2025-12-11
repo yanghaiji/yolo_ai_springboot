@@ -1,5 +1,6 @@
 // 全局变量
 let selectedImage = null;
+let detectionResult = null;
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
@@ -64,8 +65,23 @@ function detectImage() {
         return response.text();
     })
     .then(data => {
+        // 检查是否返回了错误信息
+        if (data.startsWith('error:')) {
+            throw new Error(data.substring(6));
+        }
+        
         // 显示检测结果
         resultImage.innerHTML = `<img src="${data}" alt="检测结果">`;
+        
+        // 保存检测结果
+        detectionResult = data;
+        console.log('检测结果已保存:', detectionResult);
+        
+        // 启用下载按钮
+        const downloadBtn = document.getElementById('downloadBtn');
+        console.log('下载按钮当前状态:', downloadBtn.disabled);
+        downloadBtn.disabled = false;
+        console.log('下载按钮新状态:', downloadBtn.disabled);
     })
     .catch(error => {
         console.error('检测错误:', error);
@@ -120,3 +136,20 @@ function handleDrop(e) {
 }
 
 dropArea.addEventListener('drop', handleDrop, false);
+
+// 下载检测结果
+function downloadResult() {
+    if (!detectionResult) return;
+    
+    // 创建一个临时的下载链接
+    const link = document.createElement('a');
+    link.href = detectionResult;
+    link.download = 'detection_result.jpg';
+    
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+    
+    // 清理
+    document.body.removeChild(link);
+}

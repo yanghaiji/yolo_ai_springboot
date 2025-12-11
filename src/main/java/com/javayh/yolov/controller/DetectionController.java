@@ -59,7 +59,8 @@ public class DetectionController {
     @ResponseBody
     public String detectImage(@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("Image is empty").toString();
+            log.error("Image file is empty");
+            return "error: Image is empty";
         }
 
         try {
@@ -69,7 +70,32 @@ public class DetectionController {
             return "data:image/jpeg;base64," + base64Image;
         } catch (Exception e) {
             log.error("Detection failed: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body("Detection failed: " + e.getMessage()).toString();
+            return "error: Detection failed: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 上传图像并进行检测，然后返回可下载的图像文件
+     * @param file 上传的图像文件
+     * @return 检测结果图像文件
+     */
+    @PostMapping("/detect-and-download")
+    public ResponseEntity<byte[]> detectAndDownloadImage(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        try {
+            byte[] resultImage = detectionService.detect(file.getBytes());
+            
+            // 设置响应头，使浏览器能够下载图像
+            return ResponseEntity.ok()
+                    .header("Content-Type", "image/jpeg")
+                    .header("Content-Disposition", "attachment; filename=detection_result.jpg")
+                    .body(resultImage);
+        } catch (Exception e) {
+            log.error("Detection failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(null);
         }
     }
    /* @PostMapping("/detect-image")
