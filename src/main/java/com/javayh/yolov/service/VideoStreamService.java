@@ -19,7 +19,4 @@ public class VideoStreamService {
         log.info("Video stream stopped");
     }
 
-    public boolean isRunning() {
-        return isRunning;
-    }
 }

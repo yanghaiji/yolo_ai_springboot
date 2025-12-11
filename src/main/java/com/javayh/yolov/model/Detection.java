@@ -1,10 +1,30 @@
 package com.javayh.yolov.model;
 
+import lombok.Data;
+
+/**
+ * 检测结果类
+ * @author haiji
+ */
+@Data
 public class Detection {
-    public float x0, y0, x1, y1; // 左上右下（已转换为 [x0,y0,x1,y1]）
-    public float confidence;
-    public int classId;
-    public String className;
+    // 左上右下（已转换为 [x0,y0,x1,y1]）
+    /**
+     * 检测框的左上角坐标 (x0, y0)
+     */
+    private float x0, y0, x1, y1;
+    /**
+     * 检测框的置信度
+     */
+    private float confidence;
+    /**
+     * 检测框的类别id
+     */
+    private int classId;
+    /**
+     * 检测框的类别名称
+     */
+    private String className;
 
     public Detection(float x0, float y0, float x1, float y1, float confidence, int classId, String className) {
         this.x0 = x0;
@@ -29,5 +49,18 @@ public class Detection {
         float unionArea = boxAArea + boxBArea - interArea;
 
         return unionArea == 0 ? 0 : interArea / unionArea;
+    }
+
+    @Override
+    public String toString() {
+        return "{" +
+                "x0:" + x0 +
+                ", y0:" + y0 +
+                ", x1:" + x1 +
+                ", y1:" + y1 +
+                ", confidence:" + confidence +
+                ", classId:" + classId +
+                ", className:'" + className + '\'' +
+                '}';
     }
 }

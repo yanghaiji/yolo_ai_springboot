@@ -1,12 +1,14 @@
 package com.javayh.yolov.controller;
 
 import com.javayh.yolov.service.DetectionService;
-import com.javayh.yolov.service.YoloService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Base64;
@@ -19,8 +21,7 @@ import java.util.Base64;
 @Controller
 public class DetectionController {
 
-    @Autowired
-    private YoloService yoloService;
+
     @Autowired
     private DetectionService detectionService;
 

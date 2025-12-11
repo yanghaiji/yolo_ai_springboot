@@ -1,8 +1,10 @@
 package com.javayh.yolov.controller;
 
 import com.javayh.yolov.service.DetectionService;
+import com.javayh.yolov.service.VideoStreamService;
 import com.javayh.yolov.service.YoloService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,12 +13,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.io.IOException;
 import java.util.Base64;
 
+@Slf4j
 @Controller
 @RequiredArgsConstructor
 public class VideoDetectionController {
 
-    private final YoloService yoloService;
     private final DetectionService detectionService;
+    private final VideoStreamService videoStreamService;
 
     /**
      * 处理视频帧的HTTP接口
@@ -30,7 +33,7 @@ public class VideoDetectionController {
             byte[] resultImage = detectionService.detect(imageBytes);
             return Base64.getEncoder().encodeToString(resultImage);
         } catch (IOException | ai.onnxruntime.OrtException e) {
-            e.printStackTrace();
+           log.error("Error processing video frame", e);
             return "error";
         }
     }

@@ -44,7 +44,6 @@ public class Letterbox {
      * @return 调整后的图像
      */
     public Mat letterbox(Mat im) {
-        //
         // 当前形状 [height, width]
         int[] shape = {im.rows(), im.cols()};
         // Scale ratio (new / old)

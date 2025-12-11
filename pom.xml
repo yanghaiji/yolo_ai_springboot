@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.javayh</groupId>
-    <artifactId>yolov11-detection-springboot</artifactId>
+    <artifactId>yolov-detection-springboot</artifactId>
     <version>1.0.0</version>
     <name>YOLOv11 Detection</name>
     <description>YOLOv11 Object Detection with Spring Boot and ONNX Runtime</description>
@@ -44,14 +44,6 @@
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
 
-        <!-- Spring Boot DevTools -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
-
         <!-- ONNX Runtime -->
         <dependency>
             <groupId>com.microsoft.onnxruntime</groupId>
@@ -60,7 +52,6 @@
         </dependency>
 
         <!-- JavaCV for OpenCV -->
-        <!-- 使用Java内置图像处理功能替代OpenCV -->
         <dependency>
             <groupId>org.openpnp</groupId>
             <artifactId>opencv</artifactId>

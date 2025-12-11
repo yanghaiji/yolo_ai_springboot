@@ -1,7 +1,6 @@
 package com.javayh.yolov.service;
 
 import ai.onnxruntime.OnnxTensor;
-import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtException;
 import ai.onnxruntime.OrtSession;
 import com.javayh.yolov.config.YoloConfig;
@@ -18,42 +17,20 @@ import org.opencv.imgproc.Imgproc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 检测服务类
+ * @author haiji
+ */
 @Slf4j
 @Service
 public class DetectionService {
-
-    private static final OrtEnvironment ENVIRONMENT = OrtEnvironment.getEnvironment();
-    private static final OrtSession SESSION;
-
-    static {
-        try {
-            // ✅ 安全加载模型（支持路径含空格/中文）
-            URL modelUrl = DetectionService.class.getClassLoader().getResource("models/yolov11n.onnx");
-            if (modelUrl == null) {
-                throw new RuntimeException("Model 'models/yolov11n.onnx' not found in classpath!");
-            }
-            File modelFile = new File(modelUrl.toURI()); // 自动解码 %20 → 空格
-            if (!modelFile.exists()) {
-                throw new RuntimeException("Model file does not exist: " + modelFile.getAbsolutePath());
-            }
-
-            OrtSession.SessionOptions options = new OrtSession.SessionOptions();
-            // options.addCUDA(0); // 取消注释以启用 GPU（需 CUDA 环境）
-            SESSION = ENVIRONMENT.createSession(modelFile.getAbsolutePath(), options);
-            System.out.println("✅ ONNX model loaded: " + modelFile.getAbsolutePath());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load ONNX model", e);
-        }
-    }
 
     @Autowired
     private ODConfig odConfig;
@@ -61,13 +38,25 @@ public class DetectionService {
     @Autowired
     private YoloConfig yoloConfig;
 
+    @Autowired
+    private YoloService yoloService;
+
+
+
+    /**
+     * 检测图像中的物体
+     * @param bytes 图像字节数组
+     * @return 检测结果字节数组
+     * @throws IOException 如果读取图像失败
+     * @throws OrtException 如果 ONNX 推理失败
+     */
     public byte[] detect(byte[] bytes ) throws IOException, OrtException {
         // 1. 读取图像
         Mat img = Imgcodecs.imdecode(new MatOfByte(bytes), Imgcodecs.IMREAD_COLOR);
         if (img.empty()) {
             throw new IllegalArgumentException("Invalid or unsupported image format");
         }
-        log.info("Input image size: {} , X : {}" , img.width(), img.height());
+        log.info("Input image size: {} , X : {}" , img.cols(), img.rows());
 
         Mat image = img.clone();
         Imgproc.cvtColor(image, image, Imgproc.COLOR_BGR2RGB);
@@ -89,7 +78,8 @@ public class DetectionService {
         float[] pixels = new float[channels * rows * cols];
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                double[] pixel = image.get(j, i); // 注意: get(row=y, col=x)
+                // 注意: get(row=y, col=x)
+                double[] pixel = image.get(j, i);
                 for (int k = 0; k < channels; k++) {
                     pixels[rows * cols * k + j * cols + i] = (float) pixel[k] / 255.0f;
                 }
@@ -98,19 +88,19 @@ public class DetectionService {
 
         // 4. 推理
         long[] shape = {1L, (long) channels, (long) rows, (long) cols};
-        try (OnnxTensor tensor = OnnxTensor.createTensor(ENVIRONMENT, FloatBuffer.wrap(pixels), shape)) {
-            Map<String, OnnxTensor> inputMap = new HashMap<>();
-            inputMap.put(SESSION.getInputInfo().keySet().iterator().next(), tensor);
+        try (OnnxTensor tensor = OnnxTensor.createTensor(yoloService.getEnv(), FloatBuffer.wrap(pixels), shape)) {
+            Map<String, OnnxTensor> inputMap = new HashMap<>(16);
+            inputMap.put(yoloService.getSession().getInputInfo().keySet().iterator().next(), tensor);
 
-            try (OrtSession.Result result = SESSION.run(inputMap)) {
+            try (OrtSession.Result result = yoloService.getSession().run(inputMap)) {
                 Object value = result.get(0).getValue();
 
                 // 5. 动态解析 YOLOv8/v11 输出 [1, 84, 8400] → [8400, 84]
                 float[][] detections;
                 if (value instanceof float[][][]) {
                     float[][][] raw = (float[][][]) value;
-                    int dim1 = raw[0].length;   // 84
-                    int dim2 = raw[0][0].length; // 8400
+                    int dim1 = raw[0].length;
+                    int dim2 = raw[0][0].length;
 
                     if (dim1 >= 4 && dim2 > 1000) {
                         // YOLOv8/v11 格式: [1, 84, 8400]
@@ -156,7 +146,9 @@ public class DetectionService {
                         }
                     }
 
-                    if (clsId == -1 || maxConf < 0.25f) continue;
+                    if (clsId == -1 || maxConf < 0.25f) {
+                        continue;
+                    }
 
                     // 反 Letterbox 到原图坐标
                     float finalX0 = (float) ((x0 - dw) / ratio);
@@ -169,24 +161,26 @@ public class DetectionService {
                 }
 
                 // ===== 执行 NMS =====
-                List<Detection> nmsDetections = nms(detectionsList, 0.45f); // IoU 阈值 0.45
+                // IoU 阈值 0.45
+                List<Detection> nmsDetections = nms(detectionsList, yoloConfig.getNmsThreshold());
 
                 // ===== 绘图 =====
                 double fontScale = 0.5;
 
                 for (Detection det : nmsDetections) {
-                    Point topLeft = new Point(det.x0, det.y0);
-                    Point bottomRight = new Point(det.x1, det.y1);
-                    double[] colorArr = odConfig.getOtherColor(det.classId);
+                    Point topLeft = new Point(det.getX0(), det.getY0());
+                    Point bottomRight = new Point(det.getX1(), det.getY1());
+                    double[] colorArr = odConfig.getOtherColor(det.getClassId());
                     Scalar color = new Scalar(colorArr[0], colorArr[1], colorArr[2]);
 
                     // 画细框
                     Imgproc.rectangle(img, topLeft, bottomRight, color, thickness);
 
                     // 写小字
-                    String label = det.className + " " + String.format("%.2f", det.confidence);
-                    Point textLoc = new Point(det.x0, Math.max(10, det.y0 - 5));
+                    String label = det.getClassName() + " " + String.format("%.2f", det.getConfidence());
+                    Point textLoc = new Point(det.getX0(), Math.max(10, det.getY0() - 5));
                     Imgproc.putText(img, label, textLoc, Imgproc.FONT_HERSHEY_SIMPLEX, fontScale, color, thickness);
+                    log.info("DetectionInfo: {}", det);
                 }
 
             }
@@ -218,18 +212,23 @@ public class DetectionService {
         return buf.toArray();
     }
 
-    // 在 DetectionService 类中添加
+    /**
+     * 非极大值抑制（NMS）
+     * @param detections 检测结果列表
+     * @param iouThreshold IoU 阈值
+     * @return 保留的检测结果列表
+     */
     private List<Detection> nms(List<Detection> detections, float iouThreshold) {
         // 按类别分组
         Map<Integer, List<Detection>> grouped = new HashMap<>();
         for (Detection d : detections) {
-            grouped.computeIfAbsent(d.classId, k -> new ArrayList<>()).add(d);
+            grouped.computeIfAbsent(d.getClassId(), k -> new ArrayList<>()).add(d);
         }
 
         List<Detection> result = new ArrayList<>();
         for (List<Detection> group : grouped.values()) {
             // 按置信度降序排序
-            group.sort((a, b) -> Float.compare(b.confidence, a.confidence));
+            group.sort((a, b) -> Float.compare(b.getConfidence(), a.getConfidence()));
 
             boolean[] suppressed = new boolean[group.size()];
             for (int i = 0; i < group.size(); i++) {
