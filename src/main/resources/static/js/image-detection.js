@@ -6,7 +6,87 @@ let detectionResult = null;
 document.addEventListener('DOMContentLoaded', function() {
     // 监听文件选择事件
     document.getElementById('imageFile').addEventListener('change', previewImage);
+    
+    // 加载可用的模型和类别文件
+    loadAvailableModels();
+    loadAvailableClasses();
 });
+
+// 加载可用的模型文件
+function loadAvailableModels() {
+    fetch('/api/models/available-models')
+        .then(response => response.json())
+        .then(data => {
+            const modelSelect = document.getElementById('modelSelect');
+            modelSelect.innerHTML = '';
+            data.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('加载可用模型失败:', error));
+}
+
+// 加载可用的类别文件
+function loadAvailableClasses() {
+    fetch('/api/models/available-classes')
+        .then(response => response.json())
+        .then(data => {
+            const classesSelect = document.getElementById('classesSelect');
+            classesSelect.innerHTML = '';
+            data.forEach(classes => {
+                const option = document.createElement('option');
+                option.value = classes;
+                option.textContent = classes;
+                classesSelect.appendChild(option);
+            });
+        })
+        .catch(error => console.error('加载可用类别文件失败:', error));
+}
+
+// 切换模型
+function switchModel() {
+    const modelSelect = document.getElementById('modelSelect');
+    const classesSelect = document.getElementById('classesSelect');
+    const switchBtn = document.getElementById('switchModelBtn');
+    
+    const modelName = modelSelect.value;
+    const classesName = classesSelect.value;
+    
+    if (!modelName || !classesName) {
+        alert('请选择模型和类别文件');
+        return;
+    }
+    
+    switchBtn.disabled = true;
+    switchBtn.textContent = '切换中...';
+    
+    fetch('/api/models/switch-model', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ modelName, classesName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            alert('模型切换成功');
+        } else {
+            alert('模型切换失败: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('切换模型失败:', error);
+        alert('模型切换失败: ' + error.message);
+    })
+    .finally(() => {
+        switchBtn.disabled = false;
+        switchBtn.textContent = '切换模型';
+    });
+}
 
 // 预览图片
 function previewImage() {

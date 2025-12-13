@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片检测 - YOLOv11</title>
+    <title>图片检测 - YOLOv11 目标检测</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>YOLOv11 图片检测</h1>
+            <h1>图片目标检测</h1>
+            <p>上传图片进行实时目标检测</p>
             <nav>
                 <a href="/">首页</a>
-                <span>></span>
+                <span>|</span>
                 <a href="/image-detection">图片检测</a>
+                <span>|</span>
+                <a href="/video-detection">视频检测</a>
             </nav>
         </header>
         
@@ -21,12 +24,29 @@
             <div class="detection-section">
                 <div class="upload-area">
                     <h2>上传图片</h2>
+                    <div class="model-selector">
+                        <div class="select-group">
+                            <label for="modelSelect">选择模型:</label>
+                            <select id="modelSelect">
+                                <option value="">加载中...</option>
+                            </select>
+                        </div>
+                        <div class="select-group">
+                            <label for="classesSelect">选择类别文件:</label>
+                            <select id="classesSelect">
+                                <option value="">加载中...</option>
+                            </select>
+                        </div>
+                        <button id="switchModelBtn" onclick="switchModel()">切换模型</button>
+                    </div>
                     <div class="file-upload">
                         <input type="file" id="imageFile" accept="image/*">
                         <label for="imageFile" id="fileLabel">点击选择图片或拖拽到此处</label>
                     </div>
-                    <button id="detectBtn" onclick="detectImage()" disabled>开始检测</button>
-                    <button id="downloadBtn" onclick="downloadResult()" disabled>下载检测结果</button>
+                    <div class="button-group">
+                        <button id="detectBtn" onclick="detectImage()" disabled>开始检测</button>
+                        <button id="downloadBtn" onclick="downloadResult()" disabled>下载检测结果</button>
+                    </div>
                 </div>
                 
                 <div class="result-area">
